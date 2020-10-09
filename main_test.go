@@ -69,6 +69,38 @@ func TestSoundsExportIndividual(t *testing.T) {
 
 }
 
+func TestBoomSound(t *testing.T) {
+	f, err := os.Open("sounds.dat")
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	tracks, err := LoadTracks(f)
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	defer func() {
+		if err := recover(); err != nil {
+			fmt.Printf("uncaught error exporting track %d: %s\n", 2420, err)
+		}
+	}()
+
+	track := tracks[2420]
+	raw, err := track.generate()
+
+	if err != nil {
+		fmt.Printf("could not generate track %d: %s\n", 2420, err.Error())
+		return
+	}
+
+	if err := ioutil.WriteFile(fmt.Sprintf("wav/%d.wav", 2420), raw, 0777); err != nil {
+		fmt.Printf("could not save track %d: %s\n", 2420, err.Error())
+	}
+}
+
 func TestSoundsExportPacked(t *testing.T) {
 	f, err := os.Open("sounds.dat")
 

@@ -2,11 +2,12 @@ package snd
 
 import (
 	"errors"
-	"github.com/faiface/beep"
-	errors2 "github.com/pkg/errors"
 	"io"
 	"io/ioutil"
 	"math"
+
+	"github.com/faiface/beep"
+	errors2 "github.com/pkg/errors"
 )
 
 const SampleRate = 22050
@@ -102,7 +103,7 @@ func (t *Track) generate() ([]byte, error) {
 	}
 
 	sampleCount := (length * SampleRate) / 1000
-	samples := make([]int8, sampleCount)
+	samples := make([]int, sampleCount)
 
 	for _, tone := range t.Tones {
 		if tone != nil {
@@ -115,14 +116,12 @@ func (t *Track) generate() ([]byte, error) {
 			}
 
 			for pos := 0; pos < toneSampleCount; pos++ {
-				sample := int(samples[pos+toneStart]) + (toneSamples[pos]>>8)
-				if ((sample + 128) & -256) != 0 {
-					sample = sample>>31 ^ 127
-				}
-				samples[pos+toneStart] = int8(sample)
+				samples[pos+toneStart] += toneSamples[pos]
 			}
 		}
 	}
+
+	sampleCount *= 2
 
 	buf := &buffer{make([]byte, 44+sampleCount), 0}
 	buf.put([]byte("RIFF"))
@@ -133,14 +132,14 @@ func (t *Track) generate() ([]byte, error) {
 	buf.p16le(1)     // PCM Format
 	buf.p16le(1)     // Mono
 	buf.p32le(22050) // Sample Rate
-	buf.p32le(22050) // Byte Rate
-	buf.p16le(1)     // BlockAlign
-	buf.p16le(8)    // BitsPerSample
+	buf.p32le(44100) // Byte Rate
+	buf.p16le(2)     // BlockAlign
+	buf.p16le(16)    // BitsPerSample
 	buf.put([]byte("data"))
 	buf.p32le(sampleCount)
 
 	for _, sample := range samples {
-		buf.p8(int(sample - 127))
+		buf.p16le(int(sample))
 	}
 
 	return buf.data, nil
