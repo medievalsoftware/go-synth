@@ -2,21 +2,13 @@ package snd
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"math"
-
-	"github.com/faiface/beep"
-	errors2 "github.com/pkg/errors"
 )
 
 const SampleRate = 22050
-
-var Format = beep.Format{
-	SampleRate:  beep.SampleRate(SampleRate),
-	NumChannels: 1,
-	Precision:   1,
-}
 
 func LoadTracks(reader io.Reader) (tracks map[int]*Track, err error) {
 	data, err := ioutil.ReadAll(reader)
@@ -37,7 +29,7 @@ func LoadTracks(reader io.Reader) (tracks map[int]*Track, err error) {
 		}
 
 		if track, err := loadTrack(buf); err != nil {
-			return nil, errors2.Wrapf(err, "sound[%d] (counter=%d)", index, count)
+			return nil, fmt.Errorf("%s: sound[%d] (counter=%d)", err.Error(), index, count)
 		} else {
 			tracks[index] = track
 		}
