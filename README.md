@@ -65,7 +65,8 @@ type Filter struct {
 	Frequencies [2][2][4]uint16
 	Ranges      [2][2][4]uint16
 	Ranges		Envelope
-}```
+}
+```
 
 # Special types:
 ```go
@@ -83,4 +84,5 @@ func (b *buffer) usmart() int {
 		return int(b.u8())
 	}
 	return int(b.u16()) - 32768
-}```
+}
+```
