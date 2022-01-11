@@ -14,9 +14,9 @@ type Track struct {
 }
 
 type Tone struct {
-	Active				bool // uint8
-
+	Active			bool // uint8
 	// if !Active then skip remaining:
+	
 	FrequencyBase		Envelope
 	AmplitudeBase		Envelope
 
@@ -77,8 +77,8 @@ type Filter struct {
 
 ## Special types:
 ```go
-type smart	//(int8 or int16)	range: [-16384,	16383]
-type usmart	//(uint8 or uint16)	range: [0,	32767]
+type smart	int8|int16	// range: [-16384,	16383]
+type usmart	uint8|uint16	// range: [0,		32767]
 
 func (b *buffer) smart() int {
 	if b.data[b.position] < 128 {
