@@ -98,7 +98,7 @@ func (b *buffer) usmart() int {
 # FAQ
 ## What format does it output?
 ```
-Format:         PCM
+Format:         Signed 16-bit PCM
 Channels:       1 (Mono)
 Sample Rate:    22050Hz
 Byte Rate:      44100Hz
