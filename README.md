@@ -77,8 +77,8 @@ type Filter struct {
 
 ## Special types:
 ```go
-type smart	(int8 or int16)		range: [-16384,	16383]
-type umsart	(uint8 or uint16)	range: [0,	32767]
+type smart	//(int8 or int16)	range: [-16384,	16383]
+type usmart	//(uint8 or uint16)	range: [0,	32767]
 
 func (b *buffer) smart() int {
 	if b.data[b.position] < 128 {
