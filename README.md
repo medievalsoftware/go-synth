@@ -1,5 +1,24 @@
 # Simple Waveform Synthesizer
 
+# FAQ
+## What format does it output?
+```
+Format:         PCM
+Channels:       1 (Mono)
+Sample Rate:    22050Hz
+Byte Rate:      44100Hz
+BlockAlign:     2
+BitsPerSample:  16
+```
+
+http://soundfile.sapp.org/doc/WaveFormat/
+
+## What is this from?
+Reverse engineered from a RuneScape Game Client from 2005.
+
+## How do I use it?
+At the moment I haven't written a tool to convert a human readable format (JSON) into the correct format. This means you would have to manually build the binary format yourself or create a tool to do it.
+
 # Format:
 
 ```go
