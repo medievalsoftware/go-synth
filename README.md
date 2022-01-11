@@ -26,25 +26,26 @@ type Tone struct {
 	AmplitudeModRate	Envelope
 	AmplitudeModRange	Envelope
 
-	Release				Envelope
-	Attack				Envelope
+	Release			Envelope
+	Attack			Envelope
 
-	Harmonics			[10]Harmonic
+	Harmonics		[10]Harmonic
 
-	ReverbDelay			usmart
+	ReverbDelay		usmart
 	ReverbVolume		usmart
-	Length				uint16
-	Start				uint16
+	Length			uint16
+	Start			uint16
 
 	// Infinite Impulse Response Filter (IIR Filter)
-	IIRFilter			Filter
+	IIRFilter		Filter
 }
 
 type Envelope struct {
 	Form		uint8 // 1 = Square, 2 = Sine, 3 = Saw, 4 = Noise
 	// if Form == 0 then skip remaining:
+	
 	Start		uint32
-	End			uint32
+	End		uint32
 	SegmentN	uint8
 	Segments	[SegmentN]EnvelopeSegment
 }
@@ -57,6 +58,7 @@ type EnvelopeSegment struct {
 type Harmonic struct {
 	Volume		usmart
 	// if Volume == 0 then skip remaining:
+	
 	Semitone	smart
 	Delay		usmart
 }
@@ -65,9 +67,10 @@ type Harmonic struct {
 type Filter struct {
 	Interval	uint8
 	// if Interval == 0 then skip remaining:
+	
 	Unities		[2]uint16
-	Frequencies [2][2][4]uint16
-	Ranges      [2][2][4]uint16
+	Frequencies	[2][2][4]uint16
+	Ranges		[2][2][4]uint16
 	Ranges		Envelope
 }
 ```
