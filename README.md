@@ -1,25 +1,10 @@
 # Simple Waveform Synthesizer
 
-# FAQ
-## What format does it output?
-```
-Format:         PCM
-Channels:       1 (Mono)
-Sample Rate:    22050Hz
-Byte Rate:      44100Hz
-BlockAlign:     2
-BitsPerSample:  16
-```
+# Description
 
-http://soundfile.sapp.org/doc/WaveFormat/
+This is a 16bit mono PCM WAVE generator that supports looping, modulation(of frequency and amplitude), release, attack, harmonics, and reverb.
 
-## What is this from?
-Reverse engineered from a RuneScape Game Client from 2005.
-
-## How do I use it?
-At the moment I haven't written a tool to convert a human readable format (JSON) into the correct format. This means you would have to manually build the binary format yourself or create a tool to do it.
-
-# Format:
+# Input Format:
 
 ```go
 type Track struct {
@@ -87,7 +72,7 @@ type Filter struct {
 }
 ```
 
-# Special types:
+## Special types:
 ```go
 // range: [-16384, 16383]
 func (b *buffer) smart() int {
@@ -105,3 +90,23 @@ func (b *buffer) usmart() int {
 	return int(b.u16()) - 32768
 }
 ```
+
+# FAQ
+## What format does it output?
+```
+Format:         PCM
+Channels:       1 (Mono)
+Sample Rate:    22050Hz
+Byte Rate:      44100Hz
+BlockAlign:     2
+BitsPerSample:  16
+```
+
+http://soundfile.sapp.org/doc/WaveFormat/
+
+## What is this from?
+Reverse engineered from a RuneScape Game Client from 2005.
+
+## How do I use it?
+At the moment I haven't written a tool to convert a human readable format (JSON) into the correct format. This means you would have to manually build the binary format yourself or create a tool to do it.
+
