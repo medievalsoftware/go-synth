@@ -71,7 +71,6 @@ type Filter struct {
 	Unities		[2]uint16
 	Frequencies	[2][2][4]uint16
 	Ranges		[2][2][4]uint16
-	Ranges		Envelope
 }
 ```
 
