@@ -32,6 +32,17 @@ func generate(form uint8, phase, amplitude int) int {
 		return (((phase & 0x7FFF) * amplitude) >> 14) - amplitude
 	case 4: // noise
 		return noise[(phase/2607)&0x7FFF] * amplitude
+	case 6: // triangle
+		phase &= 32767
+		if phase < 8192 {
+			return (phase * amplitude) >> 13
+		} else if phase < 16384 {
+			return ((16384 - phase) * amplitude) >> 13
+		} else if phase < 24576 {
+			return (((24576 - phase) * amplitude) >> 13) - amplitude
+		} else {
+			return ((phase - 32768) * amplitude) >> 13
+		}
 	}
 	return 0
 }

@@ -2,13 +2,13 @@ package snd
 
 import "fmt"
 
-type envelope struct {
-	Form      uint8
-	Start     int
-	End       int
-	Length    int
-	Durations []int
-	Peaks     []int
+type Envelope struct {
+	Form      uint8 `json:"form,omitempty"`
+	Start     int   `json:"start,omitempty"`
+	End       int   `json:"end,omitempty"`
+	Length    int   `json:"length,omitempty"`
+	Durations []int `json:"durations,omitempty"`
+	Peaks     []int `json:"peaks,omitempty"`
 
 	threshold int
 	delta     int
@@ -17,11 +17,11 @@ type envelope struct {
 	position  int
 }
 
-func (e *envelope) read(in *buffer) error {
+func (e *Envelope) read(in *buffer) error {
 	e.Form = in.u8()
 
 	if e.Form > 5 {
-		return fmt.Errorf("invalid envelope form: %d", e.Form)
+		return fmt.Errorf("invalid Envelope form: %d", e.Form)
 	}
 
 	e.Start = int(in.u32())
@@ -30,11 +30,11 @@ func (e *envelope) read(in *buffer) error {
 	return e.readShape(in)
 }
 
-func (e *envelope) readShape(in *buffer) error {
+func (e *Envelope) readShape(in *buffer) error {
 	length := in.u8()
 
 	if length == 0 {
-		return fmt.Errorf("envelope with no shape")
+		return fmt.Errorf("Envelope with no shape")
 	}
 
 	e.Length = int(length)
@@ -48,7 +48,7 @@ func (e *envelope) readShape(in *buffer) error {
 	return nil
 }
 
-func (e *envelope) eval(delta int) int {
+func (e *Envelope) eval(delta int) int {
 	// no shape
 	if len(e.Peaks) == 0 {
 		return 0
@@ -74,7 +74,7 @@ func (e *envelope) eval(delta int) int {
 	return (e.amplitude - e.delta) >> 15
 }
 
-func (e *envelope) reset() {
+func (e *Envelope) reset() {
 	e.threshold = 0
 	e.position = 0
 	e.delta = 0

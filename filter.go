@@ -8,20 +8,20 @@ import (
 // Infinite Impulse Response Filter (IIR Filter)
 // https://www.youtube.com/watch?v=9yNQBWKRSs4
 type filter struct {
-	Pairs       [2]int
-	Frequencies [2][2][4]float64
-	Ranges      [2][2][4]float64
-	Unities     [2]int
+	Poles       [2]int           `json:"pairs,omitempty"`
+	Frequencies [2][2][4]float64 `json:"frequencies,omitempty"`
+	Gains       [2][2][4]float64 `json:"ranges,omitempty"`
+	Unities     [2]int           `json:"unities,omitempty"`
 }
 
-func (f *filter) read(in *buffer, envelope *envelope) error {
+func (f *filter) read(in *buffer, envelope *Envelope) error {
 	count := in.u8()
 
-	f.Pairs[0] = int(count >> 4)
-	f.Pairs[1] = int(count) & 0xF
+	f.Poles[0] = int(count >> 4)
+	f.Poles[1] = int(count) & 0xF
 
-	if f.Pairs[0] > 4 || f.Pairs[1] > 4 {
-		return fmt.Errorf("IIR filter invalid pair interval [%d, %d]", f.Pairs[0], f.Pairs[1])
+	if f.Poles[0] > 4 || f.Poles[1] > 4 {
+		return fmt.Errorf("IIR filter invalid pair interval [%d, %d]", f.Poles[0], f.Poles[1])
 	}
 
 	if count != 0 {
@@ -31,20 +31,20 @@ func (f *filter) read(in *buffer, envelope *envelope) error {
 		migration := in.u8()
 
 		for direction := 0; direction < 2; direction++ {
-			for pair := 0; pair < f.Pairs[direction]; pair++ {
-				f.Frequencies[direction][0][pair] = float64(in.u16())
-				f.Ranges[direction][0][pair] = float64(in.u16())
+			for pole := 0; pole < f.Poles[direction]; pole++ {
+				f.Frequencies[direction][0][pole] = float64(in.u16())
+				f.Gains[direction][0][pole] = float64(in.u16())
 			}
 		}
 
 		for direction := 0; direction < 2; direction++ {
-			for pair := 0; pair < f.Pairs[direction]; pair++ {
-				if (migration & (1 << (direction * 4) << pair)) != 0 {
-					f.Frequencies[direction][1][pair] = float64(in.u16())
-					f.Ranges[direction][1][pair] = float64(in.u16())
+			for pole := 0; pole < f.Poles[direction]; pole++ {
+				if (migration & (1 << (direction * 4) << pole)) != 0 {
+					f.Frequencies[direction][1][pole] = float64(in.u16())
+					f.Gains[direction][1][pole] = float64(in.u16())
 				} else {
-					f.Frequencies[direction][1][pair] = f.Frequencies[direction][0][pair]
-					f.Ranges[direction][1][pair] = f.Ranges[direction][0][pair]
+					f.Frequencies[direction][1][pole] = f.Frequencies[direction][0][pole]
+					f.Gains[direction][1][pole] = f.Gains[direction][0][pole]
 				}
 			}
 		}
@@ -74,7 +74,7 @@ func (f *filter) eval(dir int, del float64) (order int) {
 		_unity16 = int64(_unity * 65536.0)
 	}
 
-	if f.Pairs[dir] == 0 {
+	if f.Poles[dir] == 0 {
 		return 0
 	} else {
 		u = f.gain(dir, 0, del)
@@ -84,7 +84,7 @@ func (f *filter) eval(dir int, del float64) (order int) {
 
 		var n int
 
-		for n = 1; n < f.Pairs[dir]; n++ {
+		for n = 1; n < f.Poles[dir]; n++ {
 			u = f.gain(dir, n, del)
 
 			a := -2.0 * u * math.Cos(f.phase(dir, n, del))
@@ -102,22 +102,22 @@ func (f *filter) eval(dir int, del float64) (order int) {
 		}
 
 		if dir == 0 {
-			for n = 0; n < f.Pairs[0]*2; n++ {
+			for n = 0; n < f.Poles[0]*2; n++ {
 				_coef[0][n] *= _unity
 			}
 		}
 
-		for n = 0; n < f.Pairs[dir]*2; n++ {
+		for n = 0; n < f.Poles[dir]*2; n++ {
 			_coef16[dir][n] = int64(_coef[dir][n] * 65536.0)
 		}
 
-		return f.Pairs[dir] * 2
+		return f.Poles[dir] * 2
 	}
 }
 
-func (f *filter) gain(direction, pair int, delta float64) float64 {
-	a := f.Ranges[direction][0][pair]
-	b := f.Ranges[direction][1][pair]
+func (f *filter) gain(direction, pole int, delta float64) float64 {
+	a := f.Gains[direction][0][pole]
+	b := f.Gains[direction][1][pole]
 
 	// linear interpolation a->b
 	g := a + ((b - a) * delta)
@@ -128,9 +128,9 @@ func (f *filter) gain(direction, pair int, delta float64) float64 {
 	return 1.0 - math.Pow(10, -g/20.0)
 }
 
-func (f *filter) phase(direction, pair int, delta float64) float64 {
-	a := f.Frequencies[direction][0][pair]
-	b := f.Frequencies[direction][1][pair]
+func (f *filter) phase(direction, pole int, delta float64) float64 {
+	a := f.Frequencies[direction][0][pole]
+	b := f.Frequencies[direction][1][pole]
 
 	// linear interpolation a->b
 	g := a + ((b - a) * delta)

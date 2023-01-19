@@ -3,21 +3,17 @@ package snd
 import (
 	"errors"
 	"fmt"
-	"io"
-	"io/ioutil"
 	"math"
+	"os"
 )
 
 const SampleRate = 22050
 
-func LoadTracks(reader io.Reader) (tracks map[int]*Track, err error) {
-	data, err := ioutil.ReadAll(reader)
-
-	if err != nil {
-		return nil, err
+func LoadTracks(filepath string) (tracks []*Track, err error) {
+	var data []byte
+	if data, err = os.ReadFile(filepath); err != nil {
+		return
 	}
-
-	tracks = make(map[int]*Track)
 	buf := &buffer{data, 0}
 	count := 0
 
@@ -31,7 +27,8 @@ func LoadTracks(reader io.Reader) (tracks map[int]*Track, err error) {
 		if track, err := loadTrack(buf); err != nil {
 			return nil, fmt.Errorf("%s: sound[%d] (counter=%d)", err.Error(), index, count)
 		} else {
-			tracks[index] = track
+			track.ID = index
+			tracks = append(tracks, track)
 		}
 
 		count++
@@ -41,7 +38,7 @@ func LoadTracks(reader io.Reader) (tracks map[int]*Track, err error) {
 }
 
 func LoadTrack(filename string) (*Track, error) {
-	if data, err := ioutil.ReadFile(filename); err != nil {
+	if data, err := os.ReadFile(filename); err != nil {
 		return nil, err
 	} else if track, err := loadTrack(&buffer{data, 0}); err != nil {
 		return nil, err
@@ -59,17 +56,18 @@ func loadTrack(b *buffer) (*Track, error) {
 }
 
 type Track struct {
-	Tones     [10]*tone
-	Delay     int
-	LoopBegin uint16
-	LoopEnd   uint16
+	ID        int       `json:"id"`
+	Tones     [10]*Tone `json:"tones,omitempty"`
+	Delay     int       `json:"delay,omitempty"`
+	LoopBegin uint16    `json:"loop_begin,omitempty"`
+	LoopEnd   uint16    `json:"loop_end,omitempty"`
 }
 
 func (t *Track) read(in *buffer) error {
 	for i := 0; i < 10; i++ {
 		if in.u8() != 0 {
 			in.rewind(1)
-			t.Tones[i] = newTone()
+			t.Tones[i] = NewTone()
 			if err := t.Tones[i].read(in); err != nil {
 				return err
 			}
@@ -81,7 +79,7 @@ func (t *Track) read(in *buffer) error {
 	return nil
 }
 
-func (t *Track) generate() ([]byte, error) {
+func (t *Track) CreateRiff() ([]byte, error) {
 	length := 0
 
 	for i := 0; i < len(t.Tones); i++ {
@@ -101,14 +99,16 @@ func (t *Track) generate() ([]byte, error) {
 		if tone != nil {
 			toneSampleCount := (int(tone.Length) * SampleRate) / 1000
 			toneStart := (int(tone.Start) * SampleRate) / 1000
-			toneSamples, err := tone.generate(toneSampleCount, int(tone.Length))
+			toneSamples, err := tone.Synthesize(toneSampleCount, int(tone.Length))
 
 			if err != nil {
 				return nil, err
 			}
 
-			for pos := 0; pos < toneSampleCount; pos++ {
-				samples[pos+toneStart] += toneSamples[pos]
+			for pos := 0; pos < toneSampleCount && pos < len(toneSamples); pos++ {
+				if pos+toneStart < len(samples) {
+					samples[pos+toneStart] += toneSamples[pos]
+				}
 			}
 		}
 	}
@@ -131,7 +131,7 @@ func (t *Track) generate() ([]byte, error) {
 	buf.p32le(sampleCount)
 
 	for _, sample := range samples {
-		buf.p16le(int(sample))
+		buf.p16le(sample)
 	}
 
 	return buf.data, nil

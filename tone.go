@@ -4,34 +4,34 @@ import (
 	"math"
 )
 
-type tone struct {
-	Start             uint16
-	Length            uint16 // default=500
-	FreqBase          *envelope
-	FreqModRate       *envelope
-	FreqModRange      *envelope
-	AmpBase           *envelope
-	AmpModRate        *envelope
-	AmpModRange       *envelope
-	HarmonicVolumes   [5]int
-	HarmonicSemitones [5]int
-	HarmonicDelays    [5]int
-	Filter            *filter
-	FilterRange       *envelope
-	Release           *envelope
-	Attack            *envelope
-	ReverbDelay       int
-	ReverbVolume      int
+type Tone struct {
+	Start             uint16    `json:"start,omitempty"`
+	Length            uint16    `json:"length,omitempty"` // default=500
+	FreqBase          *Envelope `json:"freq_base,omitempty"`
+	FreqModRate       *Envelope `json:"freq_mod_rate,omitempty"`
+	FreqModRange      *Envelope `json:"freq_mod_range,omitempty"`
+	AmpBase           *Envelope `json:"amp_base,omitempty"`
+	AmpModRate        *Envelope `json:"amp_mod_rate,omitempty"`
+	AmpModRange       *Envelope `json:"amp_mod_range,omitempty"`
+	HarmonicVolumes   [5]int    `json:"harmonic_volumes,omitempty"`
+	HarmonicSemitones [5]int    `json:"harmonic_semitones,omitempty"`
+	HarmonicDelays    [5]int    `json:"harmonic_delays,omitempty"`
+	Filter            *filter   `json:"filter,omitempty"`
+	FilterRange       *Envelope `json:"filter_range,omitempty"`
+	Release           *Envelope `json:"release,omitempty"`
+	Attack            *Envelope `json:"attack,omitempty"`
+	ReverbDelay       int       `json:"reverb_delay,omitempty"`
+	ReverbVolume      int       `json:"reverb_volume,omitempty"`
 }
 
-func newTone() *tone {
-	t := &tone{}
+func NewTone() *Tone {
+	t := &Tone{}
 	t.Length = 500
 	t.ReverbVolume = 100
 	return t
 }
 
-func (t *tone) generate(sampleCount, duration int) (samples []int, err error) {
+func (t *Tone) Synthesize(sampleCount, duration int) (samples []int, err error) {
 	if duration < 10 {
 		return
 	}
@@ -159,7 +159,7 @@ func (t *tone) generate(sampleCount, duration int) (samples []int, err error) {
 		}
 	}
 
-	if t.Filter.Pairs[0] > 0 || t.Filter.Pairs[1] > 0 {
+	if t.Filter.Poles[0] > 0 || t.Filter.Poles[1] > 0 {
 		t.FilterRange.reset()
 		_range := t.FilterRange.eval(sampleCount + 1)
 		fwd := t.Filter.eval(0, float64(_range)/65536.0)
@@ -177,7 +177,7 @@ func (t *tone) generate(sampleCount, duration int) (samples []int, err error) {
 				sample := int((int64(samples[index+fwd]) * _unity16) >> 16)
 
 				for offset := 0; offset < fwd; offset++ {
-					sample += (int)((int64(samples[index+fwd-1-offset]) * _coef16[0][offset] )>> 16)
+					sample += (int)((int64(samples[index+fwd-1-offset]) * _coef16[0][offset]) >> 16)
 				}
 
 				for offset := 0; offset < index; offset++ {
@@ -249,9 +249,9 @@ func (t *tone) generate(sampleCount, duration int) (samples []int, err error) {
 	return
 }
 
-func (t *tone) read(in *buffer) error {
-	t.FreqBase = &envelope{}
-	t.AmpBase = &envelope{}
+func (t *Tone) read(in *buffer) error {
+	t.FreqBase = &Envelope{}
+	t.AmpBase = &Envelope{}
 
 	if err := t.FreqBase.read(in); err != nil {
 		return err
@@ -261,8 +261,8 @@ func (t *tone) read(in *buffer) error {
 
 	if in.u8() != 0 {
 		in.rewind(1)
-		t.FreqModRate = &envelope{}
-		t.FreqModRange = &envelope{}
+		t.FreqModRate = &Envelope{}
+		t.FreqModRange = &Envelope{}
 
 		if err := t.FreqModRate.read(in); err != nil {
 			return err
@@ -273,8 +273,8 @@ func (t *tone) read(in *buffer) error {
 
 	if in.u8() != 0 {
 		in.rewind(1)
-		t.AmpModRate = &envelope{}
-		t.AmpModRange = &envelope{}
+		t.AmpModRate = &Envelope{}
+		t.AmpModRange = &Envelope{}
 
 		if err := t.AmpModRate.read(in); err != nil {
 			return err
@@ -285,8 +285,8 @@ func (t *tone) read(in *buffer) error {
 
 	if in.u8() != 0 {
 		in.rewind(1)
-		t.Release = &envelope{}
-		t.Attack = &envelope{}
+		t.Release = &Envelope{}
+		t.Attack = &Envelope{}
 
 		if err := t.Release.read(in); err != nil {
 			return err
@@ -314,6 +314,6 @@ func (t *tone) read(in *buffer) error {
 	t.Start = in.u16()
 
 	t.Filter = &filter{}
-	t.FilterRange = &envelope{}
+	t.FilterRange = &Envelope{}
 	return t.Filter.read(in, t.FilterRange)
 }
